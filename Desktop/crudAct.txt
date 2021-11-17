@@ -1,0 +1,307 @@
+src\app\app.component.html
+
+<!--ng g s cruduserservice-->
+<!--ng g c crudangular-->
+<app-crudangular></app-crudangular>
+
+=============================================================
+src\app\crudangular\crudangular.component.html
+
+<div *ngIf="!showEditUserForm" class="container">
+    <div class="create-block">
+      <div>
+        <h3>Create Data:</h3>
+      </div>
+      <form [formGroup]="userForm" (submit)="createUser($event, userForm)">
+        <div class="form-group row">
+          <label class="col-sm-3" for="name">First-Name:</label>
+          <input class="col-sm-9" type="text" placeholder="Enter firstName" id="firstName" formControlName="firstName">
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3" for="username">Last-Name:</label>
+            <input class="col-sm-9" type="text" placeholder="Enter lastName" id="lastName" formControlName="lastName">
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3" for="username">Country:</label>
+            <input class="col-sm-9" type="text" placeholder="Enter coutry" id="country" formControlName="country">
+        </div>
+        <button class="btn btn-primary" type="submit">
+            <i class="fas fa-plus"></i> Create Data
+          </button>
+        </form>
+        <div class="status" *ngIf="userCreated">
+            Data Created Sucessfully.
+          </div>
+        </div>
+      </div>
+      <div *ngIf="userData">
+        <h3 class="text-center">User Data</h3>
+        <div class="container" *ngFor="let data of userData">
+          <div *ngIf="!showEditUserForm" class="user-data card">
+            
+        <div>
+            <div>
+              <h4> FirstName: {{data.firstName}}</h4>
+            </div>
+            <div>
+              <h4> LastName: {{data.lastName}}</h4>
+            </div>
+            <div>
+              <h4> Country: {{data.country}}</h4>
+            </div>
+          </div>
+          <div>
+            <button style="margin: 4px;" class="btn btn-primary" (click)="editUser($event, data)">
+              <i class="fas fa-edit"></i> Edit Data
+            </button>
+            <button style="margin: 4px;" class="btn btn-danger" (click)="deleteUser($event, data)">
+                <i class="fas fa-trash"></i> Delete Data
+              </button>
+            </div>
+
+            <div>
+                <div class="status" *ngIf="userDeleted && data.id === userDeletedId">
+                  Data Deleted Sucessfully.
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="container" *ngIf="showEditUserForm">
+            <div class="create-block">
+              <div>
+                <h3>Edit Data:</h3>
+              </div>
+              <form [formGroup]="editUserForm" (submit)="editUserData($event, editUserForm)">
+                <div class="form-group row">
+                    <label class="col-sm-3" for="name">First-Name:</label>
+                    <input class="col-sm-9" type="text" placeholder="Enter firstName" id="firstName" formControlName="firstName">
+                  </div>
+                  <div class="form-group row">
+                      <label class="col-sm-3" for="username">Last-Name:</label>
+                      <input class="col-sm-9" type="text" placeholder="Enter lastName" id="lastName" formControlName="lastName">
+                  </div>
+                  <div class="form-group row">
+                      <label class="col-sm-3" for="username">Country:</label>
+                      <input class="col-sm-9" type="text" placeholder="Enter coutry" id="country" formControlName="country">
+                  </div>   
+
+                  <button class="btn btn-primary" type="submit">Edit User</button>
+                </form>
+
+                <div class="status" *ngIf="userEdited">
+                    User Edited Sucessfully.
+                  </div>
+                </div>
+              </div>
+            </div>
+=============================================================================
+src\app\crudangular\crudangular.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup } from '@angular/forms';
+import { CruduserserviceService } from '../cruduserservice.service';
+
+@Component({
+  selector: 'app-crudangular',
+  templateUrl: './crudangular.component.html',
+  styleUrls: ['./crudangular.component.css']
+})
+export class CrudangularComponent implements OnInit {
+  userData:any;
+  userForm!: FormGroup;
+  editUserForm!: FormGroup;
+  showEditUserForm = false;
+  editFormId: any;
+
+  userCreated = false;
+  userEdited = false;
+  userDeleted = false;
+  userDeletedId: any;
+
+  constructor(private userDataService: CruduserserviceService, private fb: FormBuilder) { }
+
+  
+  ngOnInit() {
+    this.userDataService.getUserData().subscribe((data) => {
+      console.log('data', data);
+      this.userData = data;
+    });
+
+    this.initForm();
+  }
+
+  initForm() {
+    this.userForm = this.fb.group({
+      firstName: [],
+      lastName: [],
+      country: []
+    });
+  }
+
+  createUser(event:any, userform:any) {
+    const userData = userform.value;
+    this.userDataService.createUser(userData).subscribe((data) => {
+      console.log('user created', data);
+      this.userCreated = true;
+      setTimeout(() => {
+        this.userCreated = false;
+      }, 2000);
+    });
+  }
+
+  editUser(event:any, data:any) {
+    this.showEditUserForm = true;
+    this.editFormId = data.Id;
+    this.editUserForm = this.fb.group({
+      id: [data.id],
+      firstName: [data.firstName],
+      lastName: [data.lastName],
+      country: [data.country]
+    });
+  }
+
+  editUserData(event:any, userform:any) {
+    const userData = userform.value;
+    this.userDataService.editUser(userData).subscribe((data) => {
+      console.log('user edited', data);
+      this.userEdited = true;
+      setTimeout(() => {
+        this.userEdited = false;
+        this.showEditUserForm = false;
+      }, 2000);
+    });
+  }
+
+  deleteUser(event:any, userData:any) {
+    this.userDataService.deleteUser(userData).subscribe((data) => {
+      console.log('user deleted', data);
+      this.userDeletedId = userData.id;
+      this.userDeleted = true;
+      setTimeout(() => {
+        this.userDeleted = false;
+      }, 2000);
+    });
+  }
+
+}
+====================================================================================
+src\app\app.module.ts
+
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+import { CrudangularComponent } from './crudangular/crudangular.component';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    CrudangularComponent
+  ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    FormsModule,
+    ReactiveFormsModule,
+    HttpClientModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+==========================================================================
+src\app\cruduserservice.service.ts
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+@Injectable({
+  providedIn: 'root'
+})
+export class CruduserserviceService {
+
+  constructor(private http: HttpClient) { }
+  
+  getUserData() {
+    const url = 'http://localhost:3000/Cricket';
+    return this.http.get(url);
+  }
+
+  createUser(userData: any) {
+    const url = 'http://localhost:3000/Cricket';
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json; charset=UTF-8'
+      })
+    };
+    return this.http.post(url, userData, httpOptions);
+  }
+
+  deleteUser(userData: { id: any; }) {
+    const url = `http://localhost:3000/Cricket/${userData.id}`;
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json; charset=UTF-8'
+      })
+    };
+    return this.http.delete(url, httpOptions);
+  }
+
+  editUser(userData: { id: any; }) {
+    const url = `http://localhost:3000/Cricket/${userData.id}`;
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json; charset=UTF-8'
+      })
+    };
+
+    return this.http.put(url, userData, httpOptions);
+  }
+}
+========================================================================
+mydb.json
+
+{
+  "Cricket": [
+    {
+      "id": 1,
+      "firstName": "Sachin",
+      "lastName": "Tendulkar",
+      "country": "INDIA"
+    },
+    {
+      "id": 2,
+      "firstName": "Brett",
+      "lastName": "Lee",
+      "country": "AUSTRALIA"
+    },
+    {
+      "id": 3,
+      "firstName": "Brian",
+      "lastName": "Lara",
+      "country": "WESTINDIES"
+    },
+    {
+      "id": 4,
+      "firstName": "Kumar",
+      "lastName": "Sangakara",
+      "country": "SRILANKA"
+    },
+    {
+      "id": 5,
+      "firstName": "Kevin",
+      "lastName": "Pietersen",
+      "country": "ENGLAND"
+    },
+    {
+      "id": 6,
+      "firstName": "Jaques",
+      "lastName": "Khalis",
+      "country": "SOUTHAFRICA"
+    }
+  ]
+}
